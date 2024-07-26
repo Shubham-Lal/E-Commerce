@@ -1,10 +1,9 @@
 {
   "name": "server",
   "version": "1.0.0",
-  "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js"
+    "start": "node src",
+    "dev": "nodemon src"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.44.4",
