@@ -30,7 +30,7 @@ module.exports.createUser = async (req, res) => {
             { email },
             { $setOnInsert: { _id: data.user.id, email, password } },
             { upsert: true, runValidators: true, setDefaultsOnInsert: true }
-        );
+        )
 
         res.status(200).json({ message: 'Account verification sent to your mail' })
     }
@@ -43,13 +43,13 @@ module.exports.verifyUser = async (req, res) => {
     try {
         const { email, password } = req.body
 
-        if (!email) return res.status(400).json({ message: 'Email is required' })
-        else if (!password) return res.status(400).json({ message: 'Password is required' })
+        if (!email) return res.status(400).json({ success: false, message: 'Email is required' })
+        else if (!password) return res.status(400).json({ success: false, message: 'Password is required' })
 
         const { data, error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) {
             if (error instanceof AuthApiError && error.status === 400) {
-                return res.status(400).json({ message: 'Invalid email or password' })
+                return res.status(400).json({ success: false, message: 'Invalid email or password' })
             }
             else throw err
         }
@@ -67,7 +67,17 @@ module.exports.verifyUser = async (req, res) => {
             { upsert: true, new: true, runValidators: true }
         )
 
-        res.status(200).json({ message: 'Login success' })
+        res.status(200).json({
+            success: true,
+            message: 'Login success',
+            data: {
+                user: {
+                    id: data.user.id,
+                    email: data.user.email
+                },
+                token: data.session.access_token
+            }
+        })
     }
     catch (error) {
         return res.status(500).json({ error })
