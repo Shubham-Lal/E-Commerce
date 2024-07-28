@@ -6,7 +6,6 @@ import { LoadingSVG } from '../components/loading'
 export default function Login() {
     const { user, setUser } = useAuthStore()
 
-    const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
     const [credentials, setCredentials] = useState({
         email: '',
@@ -25,23 +24,31 @@ export default function Login() {
         e.preventDefault()
 
         setError('')
-        setLoading(true)
+        setUser({ ...user, authenticated: 'authenticating' })
 
-        await fetch(`${import.meta.env.VITE_SERVER_URL}/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(credentials)
-        })
-            .then(res => res.json())
-            .then(response => {
-                if (response.success) {
-                    setUser({ ...response.data.user, authenticated: true })
-                    localStorage.setItem('token', response.data.token)
-                }
-                else setError(response.message)
+        try {
+            const ipResponse = await fetch('https://api.ipify.org/?format=json')
+            const ipData = await ipResponse.json()
+
+            const loginResponse = await fetch(`${import.meta.env.VITE_SERVER_URL}/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...credentials, ip: ipData.ip })
             })
-            .catch(err => setError(err.message || err.error || 'Something went wrong'))
-            .finally(() => setLoading(false))
+
+            const result = await loginResponse.json()
+
+            if (result.success) {
+                setUser({ ...result.data.user, authenticated: 'authenticated' })
+                localStorage.setItem('token', result.data.token)
+            } else {
+                setError(result.message)
+                setUser({ ...user, authenticated: 'failed' })
+            }
+        } catch (err) {
+            setError(err.message || err.error || 'Something went wrong')
+            setUser({ ...user, authenticated: 'failed' })
+        }
     }
 
     return (
@@ -67,10 +74,10 @@ export default function Login() {
 
                 <div className='mt-1.5 flex flex-col gap-3'>
                     <button
-                        className={`w-full py-2 px-3 flex justify-center ${loading ? 'bg-gray-300 cursor-not-allowed' : 'bg-black'} text-white`}
-                        disabled={loading}
+                        className={`w-full py-2 px-3 flex justify-center ${user.authenticated === 'authenticating' ? 'bg-gray-300 cursor-not-allowed' : 'bg-black'} text-white`}
+                        disabled={user.authenticated === 'authenticating'}
                     >
-                        {loading ? <LoadingSVG size={24} color='#000' /> : 'Sign in'}
+                        {user.authenticated === 'authenticating' ? <LoadingSVG size={24} color='#000' /> : 'Sign in'}
                     </button>
 
                     <div className='flex justify-between'>

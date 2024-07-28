@@ -4,7 +4,7 @@ export const useAuthStore = create((set) => ({
     user: {
         id: '',
         email: '',
-        authenticated: false
+        authenticated: 'authenticating' // 'authenticating', 'authenticated', 'failed'
     },
     setUser: (data) => set({ user: data })
 }))

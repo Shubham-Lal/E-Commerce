@@ -1,11 +1,12 @@
 import { Link } from 'react-router-dom'
 import { useAuthStore } from '../store/useAuthStore'
+import { LoadingSVG } from './loading'
 
 const Navbar = () => {
     const { user, setUser } = useAuthStore()
 
     const handleLogout = async () => {
-        setUser({ id: '', email: '', authenticated: false })
+        setUser({ id: '', email: '', authenticated: 'failed' })
         localStorage.removeItem('token')
     }
 
@@ -17,10 +18,12 @@ const Navbar = () => {
                     alt='ecommerce | claw'
                     className='brightness-0 w-20 translate-y-1 -translate-x-1'
                 />
-                <div className='flex gap-3 text-lg md:text-xl'>
+                <div className='flex items-center gap-3 text-lg md:text-xl'>
                     <Link to='/' className='hover:underline'>HOME</Link>
-                    {user.authenticated ? (
+                    {user.authenticated === 'authenticated' ? (
                         <button className='hover:underline' onClick={handleLogout}>LOGOUT</button>
+                    ) : user.authenticated === 'authenticating' ? (
+                        <LoadingSVG size={20} color='#000' />
                     ) : (
                         <>
                             <Link to='/login' className='hover:underline'>LOGIN</Link>
