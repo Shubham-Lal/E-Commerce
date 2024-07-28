@@ -26,14 +26,23 @@ export default function Login() {
         setError('')
         setUser({ ...user, auth: 'authenticating' })
 
+        let ip = 'none'
+
         try {
-            const ipResponse = await fetch('https://api.ipify.org/?format=json')
-            const ipData = await ipResponse.json()
+            try {
+                const ipResponse = await fetch('https://api.ipify.org/?format=json')
+                if (ipResponse.ok) {
+                    const ipData = await ipResponse.json()
+                    ip = ipData.ip
+                }
+            } catch (ipError) {
+                console.error('Failed to fetch IP address:', ipError)
+            }
 
             const loginResponse = await fetch(`${import.meta.env.VITE_SERVER_URL}/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...credentials, ip: ipData.ip })
+                body: JSON.stringify({ ...credentials, ip })
             })
 
             const result = await loginResponse.json()

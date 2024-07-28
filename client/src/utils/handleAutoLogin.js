@@ -5,16 +5,25 @@ const handleAutoLogin = async (user, setUser) => {
         return setUser({ ...user, auth: 'failed' })
     }
     else {
-        const ipResponse = await fetch('https://api.ipify.org/?format=json')
-        const ipData = await ipResponse.json()
+        let ip = 'none'
+
+        try {
+            const ipResponse = await fetch('https://api.ipify.org/?format=json')
+            if (ipResponse.ok) {
+                const ipData = await ipResponse.json()
+                ip = ipData.ip
+            }
+        } catch (ipError) {
+            console.error('Failed to fetch IP address:', ipError)
+        }
 
         const headers = new Headers()
         headers.append('authorization', `Bearer ${token}`)
-        headers.append('ip', ipData.ip)
+        headers.append('ip', ip)
 
         await fetch(`${import.meta.env.VITE_SERVER_URL}/login`, {
             method: 'GET',
-            headers: headers,
+            headers: headers
         })
             .then(res => res.json())
             .then(response => {

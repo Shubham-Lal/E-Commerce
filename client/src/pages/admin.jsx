@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useAuthStore } from '../store/useAuthStore'
+import { useProductStore } from '../store/useProductStore'
 import { MdEdit, MdDelete } from 'react-icons/md'
-import Product from '../components/product'
+import ProductModal from '../components/product-modal'
 
 export default function Admin() {
     const { setUser } = useAuthStore()
+    const { products, setProducts } = useProductStore()
 
     const [create, setCreate] = useState({ open: false, type: '' })
-    const [products, setProducts] = useState([])
     const [editProduct, setEditProduct] = useState(null)
 
     const handleEditProduct = (product) => {
@@ -33,23 +34,6 @@ export default function Admin() {
                 }
             })
     }
-
-    useEffect(() => {
-        const fetchProducts = async () => {
-            await fetch(`${import.meta.env.VITE_SERVER_URL}/products`, {
-                method: 'GET',
-                headers: { 'Content-Type': 'application/json' }
-            })
-                .then(res => res.json())
-                .then(response => {
-                    if (response.success) setProducts(response.data)
-                    else setProducts(null)
-                })
-                .catch(() => setProducts(null))
-        }
-
-        fetchProducts()
-    }, [])
 
     return (
         <div className='relative overflow-x-hidden'>
@@ -93,7 +77,7 @@ export default function Admin() {
                 </table>
             </div>
 
-            {create.open && <Product type={create.type} data={editProduct} setCreate={setCreate} setProducts={setProducts} />}
+            {create.open && <ProductModal type={create.type} data={editProduct} setCreate={setCreate} setProducts={setProducts} />}
         </div>
     )
 }

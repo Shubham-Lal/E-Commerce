@@ -3,7 +3,7 @@ import { useAuthStore } from '../store/useAuthStore'
 import { IoMdClose } from 'react-icons/io'
 import { LoadingSVG } from './loading'
 
-const Product = ({ type, data, setCreate, setProducts }) => {
+const ProductModal = ({ type, data, setCreate, setProducts }) => {
     const { setUser } = useAuthStore()
 
     const [loading, setLoading] = useState(false)
@@ -35,8 +35,8 @@ const Product = ({ type, data, setCreate, setProducts }) => {
         setError('')
         setLoading(true)
 
-        const url = type === 'Add' ? `${import.meta.env.VITE_SERVER_URL}/products` : `${import.meta.env.VITE_SERVER_URL}/products/${data._id}`;
-        const method = type === 'Add' ? 'POST' : 'PUT';
+        const url = type === 'Add' ? `${import.meta.env.VITE_SERVER_URL}/products` : `${import.meta.env.VITE_SERVER_URL}/products/${data._id}`
+        const method = type === 'Add' ? 'POST' : 'PUT'
 
         await fetch(url, {
             method,
@@ -123,4 +123,4 @@ const Product = ({ type, data, setCreate, setProducts }) => {
     )
 }
 
-export default Product
+export default ProductModal
