@@ -24,7 +24,7 @@ export default function Login() {
         e.preventDefault()
 
         setError('')
-        setUser({ ...user, authenticated: 'authenticating' })
+        setUser({ ...user, auth: 'authenticating' })
 
         try {
             const ipResponse = await fetch('https://api.ipify.org/?format=json')
@@ -39,22 +39,22 @@ export default function Login() {
             const result = await loginResponse.json()
 
             if (result.success) {
-                setUser({ ...result.data.user, authenticated: 'authenticated' })
+                setUser({ ...result.data.user, auth: 'authenticated' })
                 localStorage.setItem('token', result.data.token)
             } else {
                 setError(result.message)
-                setUser({ ...user, authenticated: 'failed' })
+                setUser({ ...user, auth: 'failed' })
             }
         } catch (err) {
             setError(err.message || err.error || 'Something went wrong')
-            setUser({ ...user, authenticated: 'failed' })
+            setUser({ ...user, auth: 'failed' })
         }
     }
 
     return (
         <>
             <form className='max-w-[500px] w-full mx-auto p-3 border' onSubmit={handleLognSubmit}>
-                <h1 className='mb-2 md:mb-2.5 text-2xl md:text-3xl text-center'>Login</h1>
+                <h1 className='mb-2 sm:mb-2.5 text-2xl sm:text-3xl text-center'>Login</h1>
 
                 <input
                     name='email'
@@ -74,10 +74,10 @@ export default function Login() {
 
                 <div className='mt-1.5 flex flex-col gap-3'>
                     <button
-                        className={`w-full py-2 px-3 flex justify-center ${user.authenticated === 'authenticating' ? 'bg-gray-300 cursor-not-allowed' : 'bg-black'} text-white`}
-                        disabled={user.authenticated === 'authenticating'}
+                        className={`w-full py-2 px-3 flex justify-center ${user.auth === 'authenticating' ? 'bg-gray-300 cursor-not-allowed' : 'bg-black'} text-white`}
+                        disabled={user.auth === 'authenticating'}
                     >
-                        {user.authenticated === 'authenticating' ? <LoadingSVG size={24} color='#000' /> : 'Sign in'}
+                        {user.auth === 'authenticating' ? <LoadingSVG size={24} color='#000' /> : 'Sign in'}
                     </button>
 
                     <div className='flex justify-between'>

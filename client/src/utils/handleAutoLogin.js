@@ -2,7 +2,7 @@ const handleAutoLogin = async (user, setUser) => {
     const token = localStorage.getItem('token')
 
     if (!token) {
-        return setUser({ ...user, authenticated: 'failed' })
+        return setUser({ ...user, auth: 'failed' })
     }
     else {
         const ipResponse = await fetch('https://api.ipify.org/?format=json')
@@ -19,15 +19,15 @@ const handleAutoLogin = async (user, setUser) => {
             .then(res => res.json())
             .then(response => {
                 if (response.success) {
-                    setUser({ ...response.data.user, authenticated: 'authenticated' })
+                    setUser({ ...response.data.user, auth: 'authenticated' })
                 }
                 else {
-                    setUser({ ...user, authenticated: 'failed' })
+                    setUser({ ...user, auth: 'failed' })
                     localStorage.removeItem('token')
                 }
             })
             .catch(() => {
-                setUser({ ...user, authenticated: 'failed' })
+                setUser({ ...user, auth: 'failed' })
                 localStorage.removeItem('token')
             })
     }

@@ -16,15 +16,17 @@ export default function App() {
     handleAutoLogin(user, setUser)
   }, [])
 
+  console.log(user)
+
   return (
     <BrowserRouter>
       <Navbar />
       <main>
         <Routes>
           <Route index element={<Home />} />
-          <Route path='/login' element={user.authenticated !== 'authenticated' ? <Login /> : <Navigate to='/' />} />
-          <Route path='/signup' element={user.authenticated !== 'authenticated' ? <Signup /> : <Navigate to='/' />} />
-          <Route path='/forgot-password' element={user.authenticated !== 'authenticated' ? <ForgotPassword /> : <Navigate to='/' />} />
+          <Route path='/login' element={user.auth !== 'authenticated' ? <Login /> : <Navigate to='/' />} />
+          <Route path='/signup' element={user.auth !== 'authenticated' ? <Signup /> : <Navigate to='/' />} />
+          <Route path='/forgot-password' element={user.auth !== 'authenticated' ? <ForgotPassword /> : <Navigate to='/' />} />
         </Routes>
       </main>
     </BrowserRouter>
