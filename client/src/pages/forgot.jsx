@@ -11,7 +11,7 @@ export default function ForgotPassword() {
             <h1 className='mb-2 sm:mb-2.5 text-2xl sm:text-3xl text-center'>Forgot Password</h1>
 
             <input
-                className='w-full my-1.5 py-2 px-3 border'
+                className='w-full my-1.5 py-2 px-3 outline-none border-2 focus:border-black'
                 placeholder='Enter email address'
             />
 

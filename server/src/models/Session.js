@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
 
 const SessionSchema = new mongoose.Schema({
-    user_id: { type: String, ref: 'User', required: true, unique: true },
+    _id: { type: String, ref: 'User', required: true },
     login: [{
         timestamp: { type: Date, required: true },
         ip: { type: String, required: true }

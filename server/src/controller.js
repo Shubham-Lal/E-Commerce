@@ -1,7 +1,10 @@
 const supabase = require('./supabase')
 const { AuthApiError } = require('@supabase/supabase-js')
+const mongoose = require('mongoose')
 const User = require('./models/User.js')
 const Session = require('./models/Session.js')
+const Product = require('./models/Product.js')
+const isNumber = require('is-number')
 
 module.exports.createUser = async (req, res) => {
     try {
@@ -58,8 +61,8 @@ module.exports.verifyUser = async (req, res) => {
             return res.status(400).json({ success: false, message: 'User not found' })
         }
 
-        await Session.findOneAndUpdate(
-            { user_id: data.user.id },
+        await Session.findByIdAndUpdate(
+            data.user.id,
             {
                 $push: {
                     login: { timestamp: data.user.last_sign_in_at, ip }
@@ -88,8 +91,8 @@ module.exports.verifyUser = async (req, res) => {
 
 module.exports.autoLogin = async (req, res) => {
     try {
-        await Session.findOneAndUpdate(
-            { user_id: req.user.id },
+        await Session.findByIdAndUpdate(
+            req.user.id,
             {
                 $push: {
                     login: {
@@ -119,17 +122,43 @@ module.exports.autoLogin = async (req, res) => {
 }
 
 module.exports.createProduct = async (req, res) => {
+    const { name, description, price, stock } = req.body
+
+    if (req.user.user_role !== 'admin') return res.status(400).json({ success: false, message: 'Unauthorized' })
+    else if (!name) return res.status(400).json({ success: false, message: 'Product name is required' })
+    else if (!description) return res.status(400).json({ success: false, message: 'Product description is required' })
+    else if (!price) return res.status(400).json({ success: false, message: 'Product price is required' })
+    else if (!isNumber(price)) return res.status(400).json({ success: false, message: 'Product price must be a number' })
+    else if (price <= 0) return res.status(400).json({ success: false, message: 'Product price must be greater than 0' })
+    else if (!stock) return res.status(400).json({ success: false, message: 'Product stock is required' })
+    else if (!isNumber(stock)) return res.status(400).json({ success: false, message: 'Product stock must be a number' })
+    else if (stock <= 0) return res.status(400).json({ success: false, message: 'Product stock must be greater than 0' })
+
+    const session = await mongoose.startSession()
+    session.startTransaction()
+
     try {
-        res.status(200)
-    }
-    catch (error) {
+        const newProduct = new Product({ name, description, price, stock })
+        await newProduct.save({ session })
+
+        const products = await Product.find().sort({ createdAt: -1 }).session(session)
+
+        await session.commitTransaction()
+        session.endSession()
+
+        return res.status(200).json({ success: true, data: products })
+    } catch (error) {
+        await session.abortTransaction()
+        session.endSession()
         return res.status(500).json({ success: false, message: error.message })
     }
 }
 
 module.exports.fetchProducts = async (req, res) => {
     try {
-        res.status(200)
+        const products = await Product.find({}).sort({ createdAt: -1 })
+
+        res.status(200).json({ success: true, data: products })
     }
     catch (error) {
         return res.status(500).json({ success: false, message: error.message })
@@ -137,19 +166,70 @@ module.exports.fetchProducts = async (req, res) => {
 }
 
 module.exports.updateProduct = async (req, res) => {
+    const id = req.params.id
+    const { name, description, price, stock } = req.body
+
+    if (req.user.user_role !== 'admin') return res.status(400).json({ success: false, message: 'Unauthorized' })
+    else if (!id) return res.status(400).json({ success: false, message: 'Product id is required' })
+    else if (!name) return res.status(400).json({ success: false, message: 'Product name is required' })
+    else if (!description) return res.status(400).json({ success: false, message: 'Product description is required' })
+    else if (!price) return res.status(400).json({ success: false, message: 'Product price is required' })
+    else if (isNaN(price)) return res.status(400).json({ success: false, message: 'Product price must be a number' })
+    else if (price <= 0) return res.status(400).json({ success: false, message: 'Product price must be greater than 0' })
+    else if (!stock) return res.status(400).json({ success: false, message: 'Product stock is required' })
+    else if (isNaN(stock)) return res.status(400).json({ success: false, message: 'Product stock must be a number' })
+    else if (stock < 0) return res.status(400).json({ success: false, message: 'Product stock must be greater than or equal to 0' })
+
+    const session = await mongoose.startSession()
+    session.startTransaction()
+
     try {
-        res.status(200)
-    }
-    catch (error) {
+        const updatedProduct = await Product.findByIdAndUpdate(id, { name, description, price, stock }, { new: true, session })
+        if (!updatedProduct) {
+            await session.abortTransaction()
+            session.endSession()
+            return res.status(404).json({ success: false, message: 'Product not found' })
+        }
+
+        const products = await Product.find().sort({ updatedAt: -1 }).session(session)
+
+        await session.commitTransaction()
+        session.endSession()
+
+        return res.status(200).json({ success: true, data: products })
+    } catch (error) {
+        await session.abortTransaction()
+        session.endSession()
         return res.status(500).json({ success: false, message: error.message })
     }
 }
 
 module.exports.deleteProduct = async (req, res) => {
+    const id = req.params.id
+
+    if (req.user.user_role !== 'admin') return res.status(400).json({ success: false, message: 'Unauthorized' })
+    else if (!id) return res.status(400).json({ success: false, message: 'Product id is required' })
+
+    const session = await mongoose.startSession()
+    session.startTransaction()
+
     try {
-        res.status(200)
-    }
-    catch (error) {
+        const deletedProduct = await Product.findByIdAndDelete(id, { session })
+        if (!deletedProduct) {
+            await session.abortTransaction()
+            session.endSession()
+            return res.status(404).json({ success: false, message: 'Product not found' })
+        }
+
+        const products = await Product.find().sort({ updatedAt: -1 }).session(session)
+
+        await session.commitTransaction()
+        session.endSession()
+
+        return res.status(200).json({ success: true, data: products })
+    } catch (error) {
+        await session.abortTransaction()
+        session.endSession()
         return res.status(500).json({ success: false, message: error.message })
     }
 }

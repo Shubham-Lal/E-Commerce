@@ -64,21 +64,21 @@ export default function Signup() {
 
                 <input
                     name='email'
-                    className='w-full my-1.5 py-2 px-3 border'
+                    className='w-full my-1.5 py-2 px-3 outline-none border-2 focus:border-black'
                     placeholder='Enter email address'
                     onChange={handleChange}
                 />
 
                 <input
                     name='password'
-                    className='w-full my-1.5 py-2 px-3 border'
+                    className='w-full my-1.5 py-2 px-3 outline-none border-2 focus:border-black'
                     placeholder='Enter password'
                     onChange={handleChange}
                 />
 
                 <input
                     name='confirm_password'
-                    className='w-full my-1.5 py-2 px-3 border'
+                    className='w-full my-1.5 py-2 px-3 outline-none border-2 focus:border-black'
                     placeholder='Confirm password'
                     onChange={handleChange}
                 />

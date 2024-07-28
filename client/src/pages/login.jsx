@@ -58,7 +58,7 @@ export default function Login() {
 
                 <input
                     name='email'
-                    className='w-full my-1.5 py-2 px-3 border'
+                    className='w-full my-1.5 py-2 px-3 outline-none border-2 focus:border-black'
                     placeholder='Enter email address'
                     value={credentials.email}
                     onChange={handleChange}
@@ -66,7 +66,7 @@ export default function Login() {
 
                 <input
                     name='password'
-                    className='w-full my-1.5 py-2 px-3 border'
+                    className='w-full my-1.5 py-2 px-3 outline-none border-2 focus:border-black'
                     placeholder='Enter password'
                     value={credentials.password}
                     onChange={handleChange}
