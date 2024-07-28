@@ -24,12 +24,12 @@ const Navbar = () => {
 
     return (
         <header className='fixed top-0 left-0 z-10 w-full'>
-            <nav className='realtive max-w-[1920px] w-full h-[50px] mx-auto px-3 bg-white flex items-center justify-between border-x border-b'>
+            <nav className='realtive max-w-[1920px] w-full h-[50px] mx-auto px-3 bg-black text-white flex items-center justify-between'>
                 <Link to='/' onClick={() => setDropdown(0)}>
                     <img
                         src='https://www.clawlaw.in/static/media/clawlogo.d83bac13ffbc974ac1e1.png'
                         alt='ecommerce | claw'
-                        className='brightness-0 w-20 translate-y-1 -translate-x-1'
+                        className='w-20 translate-y-1 -translate-x-1'
                     />
                 </Link>
                 <div className='relative flex items-center gap-3 text-lg sm:text-xl'>
@@ -60,7 +60,7 @@ const Navbar = () => {
                             </button>
                         </>
                     ) : user.auth === 'authenticating' ? (
-                        <LoadingSVG size={25} color='#000' />
+                        <LoadingSVG size={25} color='#FFF' />
                     ) : (
                         <>
                             <Link to='/login' className='hover:underline'>LOGIN</Link>
@@ -71,7 +71,7 @@ const Navbar = () => {
 
 
                 {dropdown === 1 ? (
-                    <div className='absolute top-[49px] right-0 sm:max-w-[400px] w-full flex flex-col gap-3 p-3 bg-white border shadow-lg sm:shadow-md'>
+                    <div className='absolute top-[49px] right-0 sm:max-w-[400px] w-full flex flex-col gap-3 p-3 bg-white text-black border shadow-lg sm:shadow-md'>
                         <p className='truncate font-semibold'>{user.email}</p>
                         <div className='w-full border-t' />
                         <button onClick={() => setDropdown(2)} className='w-fit hover:underline'>CART</button>
@@ -111,7 +111,7 @@ const Cart = () => {
     }
 
     return (
-        <div className='absolute top-[49px] right-0 sm:max-w-[400px] w-full max-h-[calc(100dvh-49px)] sm:h-[calc(100dvh-49px)] flex flex-col gap-3 p-3 bg-white border shadow-lg sm:shadow-md select-none overflow-y-auto'>
+        <div className='absolute top-[50px] right-0 sm:max-w-[400px] w-full max-h-[calc(100dvh-50px)] sm:h-[calc(100dvh-50px)] flex flex-col gap-3 p-3 bg-white text-black border shadow-lg sm:shadow-md select-none overflow-y-auto'>
             {cart.length === 0 ? <p className='text-gray-600'>Nothing in the cart</p> : (
                 <>
                     {cart.map((item, id) => (
