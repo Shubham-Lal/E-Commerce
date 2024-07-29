@@ -13,8 +13,7 @@ import ForgotPassword from './pages/forgot'
 
 export default function App() {
   const { user, setUser } = useAuthStore()
-  const { cart, setProducts } = useProductStore()
-  // console.log(cart)
+  const { setProducts } = useProductStore()
 
   useEffect(() => {
     handleAutoLogin(user, setUser)

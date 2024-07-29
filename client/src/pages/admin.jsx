@@ -3,6 +3,7 @@ import { useAuthStore } from '../store/useAuthStore'
 import { useProductStore } from '../store/useProductStore'
 import { MdEdit, MdDelete } from 'react-icons/md'
 import ProductModal from '../components/product-modal'
+import { LoadingSVG } from '../components/loading'
 
 export default function Admin() {
     const { setUser } = useAuthStore()
@@ -10,6 +11,7 @@ export default function Admin() {
 
     const [create, setCreate] = useState({ open: false, type: '' })
     const [editProduct, setEditProduct] = useState(null)
+    const [deleteProduct, setDeleteProduct] = useState({})
 
     const handleEditProduct = (product) => {
         setEditProduct(product)
@@ -20,6 +22,7 @@ export default function Admin() {
         const token = localStorage.getItem('token')
         if (!token) return setUser({ id: '', email: '', role: '', auth: 'failed' })
 
+        setDeleteProduct(prev => ({ ...prev, [id]: true }))
         await fetch(`${import.meta.env.VITE_SERVER_URL}/products/${id}`, {
             method: 'DELETE',
             headers: {
@@ -33,6 +36,7 @@ export default function Admin() {
                     setProducts(response.data)
                 }
             })
+            .finally(() => setDeleteProduct(prev => ({ ...prev, [id]: false })))
     }
 
     return (
@@ -67,8 +71,15 @@ export default function Admin() {
                                         <td className='py-2 px-3 border border-gray-300 cursor-pointer group' onClick={() => handleEditProduct(item)}>
                                             <MdEdit size={25} className='text-gray-600 group-hover:text-black' />
                                         </td>
-                                        <td className='py-2 px-3 border border-gray-300 cursor-pointer group' onClick={() => handleDeleteProduct(item._id)}>
-                                            <MdDelete size={25} className='text-gray-600 group-hover:text-black' />
+                                        <td
+                                            className={`py-2 px-3 border border-gray-300 ${deleteProduct[item._id] ? 'cursor-not-allowed' : 'cursor-pointer'} group`}
+                                            onClick={() => !deleteProduct[item._id] && handleDeleteProduct(item._id)}
+                                        >
+                                            {deleteProduct[item._id] ? (
+                                                <LoadingSVG size={25} color='#000' />
+                                            ) : (
+                                                <MdDelete size={25} className='text-gray-600 group-hover:text-black' />
+                                            )}
                                         </td>
                                     </tr>
                                 ))

@@ -1,5 +1,4 @@
 const supabase = require('./supabase')
-const { AuthApiError } = require('@supabase/supabase-js')
 const mongoose = require('mongoose')
 const User = require('./models/User.js')
 const Session = require('./models/Session.js')
@@ -46,28 +45,23 @@ module.exports.verifyUser = async (req, res) => {
 
         if (!email) return res.status(400).json({ success: false, message: 'Email is required' })
         else if (!password) return res.status(400).json({ success: false, message: 'Password is required' })
-        else if (!ip) return res.status(400).json({ success: false, message: 'Failed to get IP' })
 
         const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-        if (error) {
-            if (error instanceof AuthApiError) {
-                return res.status(400).json({ success: false, message: error.message })
-            }
-            throw err
-        }
+        if (error) throw error.message
 
         const user = await User.findById(data.user.id)
         if (!user) {
             return res.status(400).json({ success: false, message: 'User not found' })
         }
 
+        const loginData = { timestamp: data.user.last_sign_in_at }
+        if (ip && ip.trim() !== '') {
+            loginData.ip = ip
+        }
+
         await Session.findByIdAndUpdate(
             data.user.id,
-            {
-                $push: {
-                    login: { timestamp: data.user.last_sign_in_at, ip }
-                }
-            },
+            { $push: { login: loginData } },
             { upsert: true, new: true, runValidators: true }
         )
 
@@ -83,24 +77,20 @@ module.exports.verifyUser = async (req, res) => {
                 token: data.session.access_token
             }
         })
-    }
-    catch (error) {
+    } catch (error) {
         return res.status(500).json({ success: false, message: error.message })
     }
 }
 
 module.exports.autoLogin = async (req, res) => {
     try {
+        const loginData = { timestamp: req.user.last_sign_in_at }
+        const ip = req.headers['ip']
+        if (ip && ip.trim() !== '') loginData.ip = ip
+
         await Session.findByIdAndUpdate(
             req.user.id,
-            {
-                $push: {
-                    login: {
-                        timestamp: req.user.last_sign_in_at,
-                        ip: req.headers['ip']
-                    }
-                }
-            },
+            { $push: { login: loginData } },
             { upsert: true, new: true, runValidators: true }
         )
 
@@ -115,8 +105,7 @@ module.exports.autoLogin = async (req, res) => {
                 }
             }
         })
-    }
-    catch (error) {
+    } catch (error) {
         return res.status(500).json({ success: false, message: error.message })
     }
 }

@@ -26,7 +26,7 @@ export default function Login() {
         setError('')
         setUser({ ...user, auth: 'authenticating' })
 
-        let ip = 'none'
+        let ip = ''
 
         try {
             try {

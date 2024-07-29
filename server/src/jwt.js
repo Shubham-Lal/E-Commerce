@@ -1,5 +1,4 @@
 const supabase = require('./supabase')
-const { AuthApiError } = require('@supabase/supabase-js')
 const User = require('./models/User.js')
 
 module.exports = async function verifyToken(req, res, next) {
@@ -13,12 +12,7 @@ module.exports = async function verifyToken(req, res, next) {
 
     try {
         const { data, error } = await supabase.auth.getUser(token)
-        if (error) {
-            if (error instanceof AuthApiError) {
-                return res.status(400).json({ success: false, message: error.message })
-            }
-            throw error
-        }
+        if (error) throw error.message
 
         const user = await User.findById(data.user.id)
         if (!user) {
