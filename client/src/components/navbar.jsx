@@ -75,7 +75,7 @@ const Navbar = () => {
                         <p className='truncate font-semibold'>{user.email}</p>
                         <div className='w-full border-t' />
                         <button onClick={() => setDropdown(2)} className='w-fit hover:underline'>CART</button>
-                        <button onClick={() => setDropdown(0)} className='w-fit hover:underline'>ORDERS</button>
+                        <Link to='/orders' onClick={() => setDropdown(0)} className='w-fit hover:underline'>ORDERS</Link>
                         <button onClick={handleLogout} className='w-fit hover:underline'>LOGOUT</button>
                     </div>
                 ) : dropdown === 2 && <Cart />}

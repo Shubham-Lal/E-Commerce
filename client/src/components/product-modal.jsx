@@ -70,6 +70,7 @@ const ProductModal = ({ type, data, setCreate, setProducts }) => {
                     <h1 className='text-2xl sm:text-3xl text-center'>{type} Product</h1>
 
                     <button
+                        type='button'
                         className='group'
                         onClick={() => setCreate({ open: false, type: '' })}
                     >
@@ -111,6 +112,7 @@ const ProductModal = ({ type, data, setCreate, setProducts }) => {
                 </div>
 
                 <button
+                    type='submit'
                     className={`mt-3 w-full py-2 px-3 flex justify-center ${loading ? 'bg-gray-300 cursor-not-allowed' : 'bg-black'} text-white`}
                     disabled={loading}
                 >

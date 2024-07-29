@@ -31,10 +31,6 @@ const handleAutoLogin = async (user, setUser) => {
                     localStorage.removeItem('token')
                 }
             })
-            .catch(() => {
-                setUser({ ...user, auth: 'failed' })
-                localStorage.removeItem('token')
-            })
     }
 }
 

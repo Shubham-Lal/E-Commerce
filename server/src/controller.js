@@ -3,7 +3,9 @@ const mongoose = require('mongoose')
 const User = require('./models/User.js')
 const Session = require('./models/Session.js')
 const Product = require('./models/Product.js')
+const Order = require('./models/Order.js')
 const isNumber = require('is-number')
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 
 module.exports.createUser = async (req, res) => {
     try {
@@ -14,7 +16,7 @@ module.exports.createUser = async (req, res) => {
         else if (password !== confirm_password) return res.status(400).json({ success: false, message: 'Password does not match' })
 
         const { data, error } = await supabase.auth.signUp({
-            email, password, options: { emailRedirectTo: `${process.env.FRONTEND_URL}/login` }
+            email, password, options: { emailRedirectTo: `${process.env.CLIENT_URL}/login` }
         })
         if (data.user && data.user.identities && data.user.identities.length === 0) {
             return res.status(400).json({ success: false, message: 'Account already exists' })
@@ -241,6 +243,92 @@ module.exports.fetchCart = async (req, res) => {
     }
 }
 
+module.exports.checkoutOrder = async (req, res) => {
+    try {
+        const product_id = req.query.product
+        const token = req.query.token
+
+        await Promise.all([
+            supabase.auth.getUser(token),
+            Product.findById(product_id).exec()
+        ]).then(async ([{ data, error }, product]) => {
+            if (error) throw new error.message
+            else if (!product) throw new Error('Product not found')
+            else if (!product.stock) throw new Error(`${product.name} out of stock`)
+
+            const user = await User.findById(data.user.id)
+            if (!user) throw new Error('User not found')
+
+            const session = await stripe.checkout.sessions.create({
+                line_items: [
+                    {
+                        price_data: {
+                            currency: 'inr',
+                            product_data: {
+                                name: product.name,
+                                description: product.description
+                            },
+                            unit_amount: product.price * 100
+                        },
+                        quantity: 1
+                    }
+                ],
+                mode: 'payment',
+                success_url: `${process.env.SERVER_URL}/order/success?session_id={CHECKOUT_SESSION_ID}&product=${product.id}&user=${user.id}`,
+                cancel_url: `${process.env.CLIENT_URL}/error?message=Order failed`,
+                payment_intent_data: {
+                    metadata: {
+                        user: user._id,
+                        products: JSON.stringify([{ _id: product._id.toString(), quantity: 1 }])
+                    }
+                }
+            })
+
+            res.redirect(session.url)
+        }).catch(error => {
+            return res.redirect(`${process.env.CLIENT_URL}/error?message=${error}`)
+        })
+    } catch (error) {
+        return res.redirect(`${process.env.CLIENT_URL}/error?message=An unexpected error occurred`)
+    }
+}
+
+module.exports.completeOrder = async (req, res) => {
+    try {
+        const sessionId = req.query.session_id
+
+        const session = await stripe.checkout.sessions.retrieve(sessionId, {
+            expand: ['payment_intent']
+        })
+        const paymentIntent = await stripe.paymentIntents.retrieve(session.payment_intent.id)
+
+        const user_id = paymentIntent.metadata.user
+        const productsMetadata = JSON.parse(paymentIntent.metadata.products)
+
+        const user = await User.findById(user_id)
+        if (!user) res.redirect(`${process.env.CLIENT_URL}/error?message=User not found`)
+
+        let total_amount = 0
+
+        for (const productMeta of productsMetadata) {
+            const product = await Product.findById(productMeta._id)
+            if (!product) throw new Error(`Product with ID ${productMeta._id} not found`)
+
+            total_amount += product.price * productMeta.quantity
+        }
+
+        await Order.create({
+            user_id,
+            products: productsMetadata,
+            total_amount
+        })
+
+        res.redirect(`${process.env.CLIENT_URL}/orders`)
+    } catch (error) {
+        res.redirect(`${process.env.CLIENT_URL}/error?message=${error.message}`)
+    }
+}
+
 module.exports.createOrder = async (req, res) => {
     try {
         res.status(200)
@@ -252,9 +340,10 @@ module.exports.createOrder = async (req, res) => {
 
 module.exports.fetchOrders = async (req, res) => {
     try {
-        res.status(200)
-    }
-    catch (error) {
+        const orders = await Order.find({ user_id: req.user.id }).populate('products._id').sort(({ order_date: -1 }))
+
+        return res.status(200).json({ success: true, data: orders })
+    } catch (error) {
         return res.status(500).json({ success: false, message: error.message })
     }
 }
