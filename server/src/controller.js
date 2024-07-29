@@ -112,6 +112,62 @@ module.exports.autoLogin = async (req, res) => {
     }
 }
 
+module.exports.demoAdmin = async (req, res) => {
+    try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email: process.env.ADMIN_EMAIL,
+            password: process.env.ADMIN_PASSWORD
+        })
+        if (error) throw error.message
+
+        const user = await User.findById(data.user.id)
+        if (!user) return res.status(400).json({ success: false, message: 'User not found' })
+
+        res.status(200).json({
+            success: true,
+            message: 'Login success',
+            data: {
+                user: {
+                    id: data.user.id,
+                    email: data.user.email,
+                    role: user.role
+                },
+                token: data.session.access_token
+            }
+        })
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message })
+    }
+}
+
+module.exports.demoUser = async (req, res) => {
+    try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email: process.env.USER_EMAIL,
+            password: process.env.USER_PASSWORD
+        })
+        if (error) throw error.message
+
+        const user = await User.findById(data.user.id)
+        if (!user) return res.status(400).json({ success: false, message: 'User not found' })
+
+        res.status(200).json({
+            success: true,
+            message: 'Login success',
+            data: {
+                user: {
+                    id: data.user.id,
+                    email: data.user.email,
+                    role: user.role
+                },
+                token: data.session.access_token
+            }
+        })
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message })
+    }
+}
+
 module.exports.createProduct = async (req, res) => {
     const { name, description, price, stock } = req.body
 
@@ -274,7 +330,7 @@ module.exports.checkoutOrder = async (req, res) => {
                     }
                 ],
                 mode: 'payment',
-                success_url: `${process.env.SERVER_URL}/order/success?session_id={CHECKOUT_SESSION_ID}&product=${product.id}&user=${user.id}`,
+                success_url: `${process.env.SERVER_URL}/payment?session_id={CHECKOUT_SESSION_ID}`,
                 cancel_url: `${process.env.CLIENT_URL}/error?message=Order failed`,
                 payment_intent_data: {
                     metadata: {
@@ -290,42 +346,6 @@ module.exports.checkoutOrder = async (req, res) => {
         })
     } catch (error) {
         return res.redirect(`${process.env.CLIENT_URL}/error?message=An unexpected error occurred`)
-    }
-}
-
-module.exports.completeOrder = async (req, res) => {
-    try {
-        const sessionId = req.query.session_id
-
-        const session = await stripe.checkout.sessions.retrieve(sessionId, {
-            expand: ['payment_intent']
-        })
-        const paymentIntent = await stripe.paymentIntents.retrieve(session.payment_intent.id)
-
-        const user_id = paymentIntent.metadata.user
-        const productsMetadata = JSON.parse(paymentIntent.metadata.products)
-
-        const user = await User.findById(user_id)
-        if (!user) res.redirect(`${process.env.CLIENT_URL}/error?message=User not found`)
-
-        let total_amount = 0
-
-        for (const productMeta of productsMetadata) {
-            const product = await Product.findById(productMeta._id)
-            if (!product) throw new Error(`Product with ID ${productMeta._id} not found`)
-
-            total_amount += product.price * productMeta.quantity
-        }
-
-        await Order.create({
-            user_id,
-            products: productsMetadata,
-            total_amount
-        })
-
-        res.redirect(`${process.env.CLIENT_URL}/orders`)
-    } catch (error) {
-        res.redirect(`${process.env.CLIENT_URL}/error?message=${error.message}`)
     }
 }
 
@@ -359,9 +379,43 @@ module.exports.fetchSessions = async (req, res) => {
 
 module.exports.processPayment = async (req, res) => {
     try {
-        res.status(200)
-    }
-    catch (error) {
-        return res.status(500).json({ success: false, message: error.message })
+        const sessionId = req.query.session_id
+
+        const session = await stripe.checkout.sessions.retrieve(sessionId, {
+            expand: ['payment_intent']
+        })
+        const paymentIntent = await stripe.paymentIntents.retrieve(session.payment_intent.id)
+
+        const user_id = paymentIntent.metadata.user
+        const productsMetadata = JSON.parse(paymentIntent.metadata.products)
+
+        const user = await User.findById(user_id)
+        if (!user) throw new Error('User not found')
+
+        let total_amount = 0
+
+        for (const productMeta of productsMetadata) {
+            const product = await Product.findById(productMeta._id)
+            if (!product) throw new Error(`Product with ID ${productMeta._id} not found`)
+
+            if (product.stock < productMeta.quantity) {
+                throw new Error(`${product.name} out of stock`)
+            }
+
+            product.stock -= productMeta.quantity
+            await product.save()
+
+            total_amount += product.price * productMeta.quantity
+        }
+
+        await Order.create({
+            user_id,
+            products: productsMetadata,
+            total_amount
+        })
+
+        res.redirect(`${process.env.CLIENT_URL}/orders`)
+    } catch (error) {
+        res.redirect(`${process.env.CLIENT_URL}/error?message=${error.message}`)
     }
 }

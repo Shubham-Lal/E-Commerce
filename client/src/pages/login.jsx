@@ -11,6 +11,10 @@ export default function Login() {
         email: '',
         password: ''
     })
+    const [demo, setDemo] = useState({
+        type: '',
+        status: false
+    })
 
     const handleChange = (e) => {
         const { name, value } = e.target
@@ -60,6 +64,31 @@ export default function Login() {
         }
     }
 
+    const handleDemo = async (type) => {
+        setError('')
+        setDemo({ type, status: true })
+
+        try {
+            const demoResponse = await fetch(`${import.meta.env.VITE_SERVER_URL}/demo/${type}`, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            })
+
+            const result = await demoResponse.json()
+
+            if (result.success) {
+                setUser({ ...result.data.user, auth: 'authenticated' })
+                localStorage.setItem('token', result.data.token)
+            } else {
+                setError(result.message)
+                setUser({ ...user, auth: 'failed' })
+            }
+        } catch (err) {
+            setError(err.message || err.error || 'Something went wrong')
+            setDemo({ type, status: false })
+        }
+    }
+
     return (
         <>
             <form className='max-w-[500px] w-full mx-auto p-3 border' onSubmit={handleLognSubmit}>
@@ -83,6 +112,7 @@ export default function Login() {
 
                 <div className='mt-1.5 flex flex-col gap-3'>
                     <button
+                        type='submit'
                         className={`w-full py-2 px-3 flex justify-center ${user.auth === 'authenticating' ? 'bg-gray-300 cursor-not-allowed' : 'bg-black'} text-white`}
                         disabled={user.auth === 'authenticating'}
                     >
@@ -92,6 +122,28 @@ export default function Login() {
                     <div className='flex justify-between'>
                         <Link to='/signup' className='hover:underline'>Create Account</Link>
                         <Link to='/forgot-password' className='hover:underline'>Forgot Password</Link>
+                    </div>
+
+                    <div className='w-full border-t' />
+
+                    <div className='flex gap-3'>
+                        <button
+                            type='button'
+                            className={`w-full py-2 px-3 flex justify-center ${demo.type === 'admin' && demo.status ? 'bg-gray-300 cursor-not-allowed' : 'border border-black'}`}
+                            disabled={demo.type === 'admin' && demo.status}
+                            onClick={() => handleDemo('admin')}
+                        >
+                            {demo.type === 'admin' && demo.status ? <LoadingSVG size={24} color='#000' /> : 'Demo admin'}
+                        </button>
+
+                        <button
+                            type='button'
+                            className={`w-full py-2 px-3 flex justify-center ${demo.type === 'user' && demo.status ? 'bg-gray-300 cursor-not-allowed' : 'border border-black'}`}
+                            disabled={demo.type === 'user' && demo.status}
+                            onClick={() => handleDemo('user')}
+                        >
+                            {demo.type === 'user' && demo.status ? <LoadingSVG size={24} color='#000' /> : 'Demo user'}
+                        </button>
                     </div>
                 </div>
             </form>

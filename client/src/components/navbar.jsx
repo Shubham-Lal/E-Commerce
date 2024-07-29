@@ -49,7 +49,9 @@ const Navbar = () => {
                             ADMIN
                         </Link>
                     )}
-                    {user.auth === 'authenticated' ? (
+                    {location.pathname === '/' && user.auth === 'authenticating' ? (
+                        <LoadingSVG size={25} color='#FFF' />
+                    ) : user.auth === 'authenticated' ? (
                         <>
                             <button onClick={() => setDropdown(dropdown !== 2 ? 2 : 0)} className='flex items-center gap-1'>
                                 <FaShoppingCart size={24} />
@@ -59,12 +61,10 @@ const Navbar = () => {
                                 <FaCircleUser size={25} />
                             </button>
                         </>
-                    ) : user.auth === 'authenticating' ? (
-                        <LoadingSVG size={25} color='#FFF' />
-                    ) : (
+                    ) : user.auth === 'failed' && (
                         <>
-                            <Link to='/login' className='hover:underline'>LOGIN</Link>
-                            <Link to='/signup' className='hover:underline'>SIGNUP</Link>
+                            <Link to='/login' className={location.pathname === '/login' ? 'underline' : 'hover:underline'}>LOGIN</Link>
+                            <Link to='/signup' className={location.pathname === '/signup' ? 'underline' : 'hover:underline'}>SIGNUP</Link>
                         </>
                     )}
                 </div>
