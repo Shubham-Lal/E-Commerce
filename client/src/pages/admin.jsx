@@ -47,46 +47,49 @@ export default function Admin() {
                     Create Product
                 </button>
             </div>
-            <div className='overflow-x-auto'>
-                <table className='w-[1240px] mt-3 border-collapse border border-gray-300'>
-                    <thead className='bg-gray-100'>
-                        <tr>
-                            <th className='w-[20%] border border-gray-300'>Name</th>
-                            <th className='border border-gray-300'>Description</th>
-                            <th className='w-[10%] border border-gray-300'>Price</th>
-                            <th className='w-[10%] border border-gray-300'>Stock</th>
-                            <th className='w-[50px] border border-gray-300'></th>
-                            <th className='w-[50px] border border-gray-300'></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {products === null || products === undefined ? <tr><td className='py-2 px-3'>Failed to fetch products</td></tr>
-                            : products.length === 0 ? <tr><td className='py-2 px-3'>No products yet</td></tr>
-                                : products.map((item, id) => (
-                                    <tr key={id}>
-                                        <td className='py-2 px-3 border border-gray-300 text-center'>{item.name}</td>
-                                        <td className='py-2 px-3 border border-gray-300'>{item.description}</td>
-                                        <td className='py-2 px-3 border border-gray-300 text-center'>₹{item.price}</td>
-                                        <td className='py-2 px-3 border border-gray-300 text-center'>{item.stock}</td>
-                                        <td className='py-2 px-3 border border-gray-300 cursor-pointer group' onClick={() => handleEditProduct(item)}>
-                                            <MdEdit size={25} className='text-gray-600 group-hover:text-black' />
-                                        </td>
-                                        <td
-                                            className={`py-2 px-3 border border-gray-300 ${deleteProduct[item._id] ? 'cursor-not-allowed' : 'cursor-pointer'} group`}
-                                            onClick={() => !deleteProduct[item._id] && handleDeleteProduct(item._id)}
-                                        >
-                                            {deleteProduct[item._id] ? (
-                                                <LoadingSVG size={25} color='#000' />
-                                            ) : (
-                                                <MdDelete size={25} className='text-gray-600 group-hover:text-black' />
-                                            )}
-                                        </td>
-                                    </tr>
-                                ))
-                        }
-                    </tbody>
-                </table>
-            </div>
+            {products.status === 'fetching' ? <div className='w-full flex justify-center'><LoadingSVG size={24} color='#000' /></div>
+                : products.status === 'fetched' ? (
+                    <div className='overflow-x-auto'>
+                        <table className='w-[1240px] mt-3 border-collapse border border-gray-300'>
+                            <thead className='bg-gray-100'>
+                                <tr>
+                                    <th className='w-[20%] border border-gray-300'>Name</th>
+                                    <th className='border border-gray-300'>Description</th>
+                                    <th className='w-[10%] border border-gray-300'>Price</th>
+                                    <th className='w-[10%] border border-gray-300'>Stock</th>
+                                    <th className='w-[50px] border border-gray-300'></th>
+                                    <th className='w-[50px] border border-gray-300'></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {!products.items.length ? <tr><td className='py-2 px-3'>No products yet</td></tr>
+                                    : products.items.map((item, id) => (
+                                        <tr key={id}>
+                                            <td className='py-2 px-3 border border-gray-300 text-center'>{item.name}</td>
+                                            <td className='py-2 px-3 border border-gray-300'>{item.description}</td>
+                                            <td className='py-2 px-3 border border-gray-300 text-center'>₹{item.price}</td>
+                                            <td className='py-2 px-3 border border-gray-300 text-center'>{item.stock}</td>
+                                            <td className='py-2 px-3 border border-gray-300 cursor-pointer group' onClick={() => handleEditProduct(item)}>
+                                                <MdEdit size={25} className='text-gray-600 group-hover:text-black' />
+                                            </td>
+                                            <td
+                                                className={`py-2 px-3 border border-gray-300 ${deleteProduct[item._id] ? 'cursor-not-allowed' : 'cursor-pointer'} group`}
+                                                onClick={() => !deleteProduct[item._id] && handleDeleteProduct(item._id)}
+                                            >
+                                                {deleteProduct[item._id] ? (
+                                                    <LoadingSVG size={25} color='#000' />
+                                                ) : (
+                                                    <MdDelete size={25} className='text-gray-600 group-hover:text-black' />
+                                                )}
+                                            </td>
+                                        </tr>
+                                    ))
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                ) : <p>Failed to fetch products</p>
+            }
 
             {create.open && <ProductModal type={create.type} data={editProduct} setCreate={setCreate} setProducts={setProducts} />}
         </div>

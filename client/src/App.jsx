@@ -3,8 +3,8 @@ import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from './store/useAuthStore'
 import { useProductStore } from './store/useProductStore'
-import handleAutoLogin from './utils/handleAutoLogin'
-import handleFetchProducts from './utils/handleFetchProducts'
+import fetchSession from './utils/fetchSession'
+import fetchProducts from './utils/fetchProducts'
 import Navbar from './components/navbar'
 import Home from './pages/home'
 import Orders from './pages/orders'
@@ -19,13 +19,13 @@ export default function App() {
   const { setProducts } = useProductStore()
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetch = async () => {
       await Promise.all([
-        handleAutoLogin(user, setUser),
-        handleFetchProducts(setProducts)
+        fetchSession(user, setUser),
+        fetchProducts(setProducts)
       ])
     }
-    fetchData()
+    fetch()
   }, [])
 
   return (

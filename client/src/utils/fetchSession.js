@@ -1,4 +1,4 @@
-const handleAutoLogin = async (user, setUser) => {
+const handleFetchSession = async (user, setUser) => {
     const token = localStorage.getItem('token')
 
     if (!token) {
@@ -17,7 +17,7 @@ const handleAutoLogin = async (user, setUser) => {
             console.error('Failed to fetch IP address:', ipError)
         }
 
-        await fetch(`${import.meta.env.VITE_SERVER_URL}/login`, {
+        await fetch(`${import.meta.env.VITE_SERVER_URL}/sessions`, {
             method: 'GET',
             headers: { 'authorization': `Bearer ${token}`, 'ip': ip }
         })
@@ -34,4 +34,4 @@ const handleAutoLogin = async (user, setUser) => {
     }
 }
 
-export default handleAutoLogin
+export default handleFetchSession

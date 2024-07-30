@@ -1,17 +1,18 @@
 const handleFetchProducts = async (setProducts) => {
     try {
+        setProducts({ status: 'fetching', items: [] })
         const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/products`, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' },
         })
         const data = await response.json()
         if (data.success) {
-            setProducts(data.data)
+            setProducts({ status: 'fetched', items: data.data })
         } else {
-            setProducts(null)
+            setProducts({ status: 'failed', items: [] })
         }
     } catch (error) {
-        setProducts(null)
+        setProducts({ status: 'failed', items: [] })
     }
 }
 
