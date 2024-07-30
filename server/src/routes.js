@@ -25,9 +25,7 @@ router.post('/cart', controller.updateCart)
 
 router.get('/cart', controller.fetchCart)
 
-router.get('/order', controller.buySingleProduct)
-
-router.post('/orders', verifyToken, controller.buyMultipleProduct)
+router.post('/orders', verifyToken, controller.checkoutProduct)
 
 router.get('/orders', verifyToken, controller.fetchOrders)
 

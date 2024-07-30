@@ -1,12 +1,17 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/useAuthStore'
 import { useProductStore } from '../store/useProductStore'
+import { LoadingSVG } from './loading'
 
 const ProductCard = ({ data }) => {
     const navigate = useNavigate()
 
     const { user, setUser } = useAuthStore()
     const { cart, setCart } = useProductStore()
+
+    const [loading, setLoading] = useState('')
+    const [error, setError] = useState(false)
 
     const handleAddToCart = () => {
         if (user.auth !== 'authenticating') {
@@ -35,13 +40,34 @@ const ProductCard = ({ data }) => {
     }
 
     const handleBuy = async () => {
-        const token = localStorage.getItem('token')
-        if (!token) {
-            setUser({ id: '', email: '', role: '', auth: 'failed' })
-            return navigate('/login')
-        }
+        if (user.auth !== 'authenticating') {
+            if (user.auth === 'failed') navigate('/login')
+            else {
+                setError('')
+                setLoading(data._id)
 
-        window.location.href = `${import.meta.env.VITE_SERVER_URL}/order?product=${data._id}&token=${token}`
+                const token = localStorage.getItem('token')
+                if (!token) return setUser({ id: '', email: '', role: '', auth: 'failed' })
+
+                await fetch(`${import.meta.env.VITE_SERVER_URL}/orders`, {
+                    method: 'POST',
+                    headers: {
+                        'authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ cart: [{ ...data, quantity: 1 }] })
+                })
+                    .then(res => res.json())
+                    .then(response => {
+                        if (response.success) {
+                            window.location.href = response.payement_url
+                        }
+                        else setError(response.message)
+                    })
+                    .catch(err => setError(err.message))
+                    .finally(() => setLoading(''))
+            }
+        }
     }
 
     return (
@@ -53,10 +79,15 @@ const ProductCard = ({ data }) => {
                 <button className='w-full py-2 px-3 flex justify-center border border-black' onClick={handleAddToCart}>
                     Add to Cart
                 </button>
-                <button className='w-full py-2 px-3 flex justify-center bg-black text-white' onClick={handleBuy}>
-                    Buy
+                <button
+                    className={`w-full py-2 px-3 flex justify-center ${loading === data._id ? 'bg-gray-300 cursor-not-allowed' : 'bg-black'} text-white`}
+                    onClick={handleBuy}
+                    disabled={loading === data._id}
+                >
+                    {loading === data._id ? <LoadingSVG size={24} color='#000' /> : 'Buy'}
                 </button>
             </div>
+            <p className='text-center text-red-600'>{error}</p>
         </div>
     )
 }

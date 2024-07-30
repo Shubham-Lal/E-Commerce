@@ -242,57 +242,7 @@ module.exports.fetchCart = async (req, res) => {
     }
 }
 
-module.exports.buySingleProduct = async (req, res) => {
-    try {
-        const product_id = req.query.product
-        const token = req.query.token
-
-        await Promise.all([
-            supabase.auth.getUser(token),
-            Product.findById(product_id).exec()
-        ]).then(async ([{ data, error }, product]) => {
-            if (error) throw new Error(error.message)
-            else if (!product) throw new Error('Product not found')
-            else if (!product.stock) throw new Error(`${product.name} out of stock`)
-
-            const user = await User.findById(data.user.id)
-            if (!user) throw new Error('User not found')
-
-            const session = await stripe.checkout.sessions.create({
-                line_items: [
-                    {
-                        price_data: {
-                            currency: 'inr',
-                            product_data: {
-                                name: product.name,
-                                description: product.description
-                            },
-                            unit_amount: product.price * 100
-                        },
-                        quantity: 1
-                    }
-                ],
-                mode: 'payment',
-                success_url: `${process.env.SERVER_URL}/payment?session_id={CHECKOUT_SESSION_ID}`,
-                cancel_url: `${process.env.CLIENT_URL}/error?message=Order failed`,
-                payment_intent_data: {
-                    metadata: {
-                        user: user._id,
-                        products: JSON.stringify([{ _id: product._id.toString(), quantity: 1 }])
-                    }
-                }
-            })
-
-            res.redirect(session.url)
-        }).catch(error => {
-            return res.redirect(`${process.env.CLIENT_URL}/error?message=${error}`)
-        })
-    } catch (error) {
-        return res.redirect(`${process.env.CLIENT_URL}/error?message=An unexpected error occurred`)
-    }
-}
-
-module.exports.buyMultipleProduct = async (req, res) => {
+module.exports.checkoutProduct = async (req, res) => {
     try {
         const user_id = req.user.id
         const { cart } = req.body

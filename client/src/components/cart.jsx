@@ -6,7 +6,7 @@ import { RiSubtractFill } from 'react-icons/ri'
 import { LoadingSVG } from './loading'
 
 const Cart = () => {
-    const { setUser } = useAuthStore()
+    const { user, setUser } = useAuthStore()
     const { cart, setCart } = useProductStore()
 
     const [error, setError] = useState(false)
@@ -44,28 +44,33 @@ const Cart = () => {
     }
 
     const handleProceedCheckout = async () => {
-        const token = localStorage.getItem('token')
-        if (!token) return setUser({ id: '', email: '', role: '', auth: 'failed' })
+        if (user.auth !== 'authenticating') {
+            if (user.auth === 'failed') navigate('/login')
+            else {
+                setLoading(true)
 
-        setLoading(true)
+                const token = localStorage.getItem('token')
+                if (!token) return setUser({ id: '', email: '', role: '', auth: 'failed' })
 
-        await fetch(`${import.meta.env.VITE_SERVER_URL}/orders`, {
-            method: 'POST',
-            headers: {
-                'authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ cart: cart.items })
-        })
-            .then(res => res.json())
-            .then(response => {
-                if (response.success) {
-                    window.location.href = response.payement_url
-                }
-                else setError(response.message)
-            })
-            .catch(err => setError(err.message))
-            .finally(() => setLoading(false))
+                await fetch(`${import.meta.env.VITE_SERVER_URL}/orders`, {
+                    method: 'POST',
+                    headers: {
+                        'authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ cart: cart.items })
+                })
+                    .then(res => res.json())
+                    .then(response => {
+                        if (response.success) {
+                            window.location.href = response.payement_url
+                        }
+                        else setError(response.message)
+                    })
+                    .catch(err => setError(err.message))
+                    .finally(() => setLoading(false))
+            }
+        }
     }
 
     return (
