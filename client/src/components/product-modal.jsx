@@ -49,15 +49,13 @@ const ProductModal = ({ type, data, setCreate, setProducts }) => {
             .then(res => res.json())
             .then(response => {
                 if (response.success) {
-                    setProducts(response.data)
+                    setProducts({ status: 'fetched', items: response.data })
                     setCreate({ open: false, type: '' })
                 }
                 else setError(response.message)
             })
             .catch(err => setError(err.message))
-            .finally(() => {
-                setLoading(false)
-            })
+            .finally(() => setLoading(false))
     }
 
     return (

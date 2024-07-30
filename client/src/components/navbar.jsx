@@ -5,8 +5,7 @@ import { useProductStore } from '../store/useProductStore'
 import { LoadingSVG } from './loading'
 import { FaCircleUser } from 'react-icons/fa6'
 import { FaShoppingCart } from 'react-icons/fa'
-import { IoMdAdd } from 'react-icons/io'
-import { RiSubtractFill } from 'react-icons/ri'
+import Cart from './cart'
 
 const Navbar = () => {
     const location = useLocation()
@@ -55,7 +54,7 @@ const Navbar = () => {
                         <>
                             <button onClick={() => setDropdown(dropdown !== 2 ? 2 : 0)} className='flex items-center gap-1'>
                                 <FaShoppingCart size={24} />
-                                <p>{cart.length > 0 && cart.length}</p>
+                                <p>{cart.items.length > 0 && cart.items.length}</p>
                             </button>
                             <button onClick={() => setDropdown(dropdown !== 1 ? 1 : 0)}>
                                 <FaCircleUser size={25} />
@@ -74,7 +73,7 @@ const Navbar = () => {
                     <div className='absolute top-[49px] right-0 sm:max-w-[400px] w-full flex flex-col gap-3 p-3 bg-white text-black border shadow-lg sm:shadow-md'>
                         <p className='truncate font-semibold'>{user.email}</p>
                         <div className='w-full border-t' />
-                        <button onClick={() => setDropdown(2)} className='w-fit hover:underline'>CART</button>
+                        <button onClick={() => setDropdown(2)} className='w-fit hover:underline'>CART {cart.items.length > 0 && `(${cart.items.length})`}</button>
                         <Link to='/orders' onClick={() => setDropdown(0)} className='w-fit hover:underline'>ORDERS</Link>
                         <button onClick={handleLogout} className='w-fit hover:underline'>LOGOUT</button>
                     </div>
@@ -83,61 +82,5 @@ const Navbar = () => {
         </header>
     )
 }
-
-const Cart = () => {
-    const { cart = [], setCart } = useProductStore()
-
-    const handleIncreaseQuantity = (id) => {
-        setCart(cart.map(item =>
-            item._id === id && item.quantity < item.stock ? { ...item, quantity: item.quantity + 1 } : item
-        ))
-    }
-
-    const handleDecreaseQuantity = (id) => {
-        setCart(cart.reduce((acc, item) => {
-            if (item._id === id) {
-                if (item.quantity > 1) {
-                    acc.push({ ...item, quantity: item.quantity - 1 })
-                }
-            } else {
-                acc.push(item)
-            }
-            return acc
-        }, []))
-    }
-
-    const calculateTotalAmount = () => {
-        return cart.reduce((total, item) => total + (item.price * item.quantity), 0)
-    }
-
-    return (
-        <div className='absolute top-[50px] right-0 sm:max-w-[400px] w-full max-h-[calc(100dvh-50px)] sm:h-[calc(100dvh-50px)] flex flex-col gap-3 p-3 bg-white text-black border shadow-lg sm:shadow-md select-none overflow-y-auto'>
-            {cart.length === 0 ? <p className='text-gray-600'>Nothing in the cart</p> : (
-                <>
-                    {cart.map((item, id) => (
-                        <div key={id} className='flex flex-col'>
-                            <p className='truncate text-xl font-semibold'>{item.name}</p>
-                            <div className='flex items-center justify-between'>
-                                <div className='flex items-center gap-2 text-xl'>
-                                    <button onClick={() => handleDecreaseQuantity(item._id)}><RiSubtractFill size={18} /></button>
-                                    <span>{item.quantity}</span>
-                                    <button onClick={() => handleIncreaseQuantity(item._id)}><IoMdAdd size={18} /></button>
-                                </div>
-                                <span>₹{item.price * item.quantity}</span>
-                            </div>
-                        </div>
-                    ))}
-                    <div className='w-full border-t' />
-                    <div className='flex justify-between'>
-                        <p>Total Amount</p>
-                        <p>₹{calculateTotalAmount()}</p>
-                    </div>
-                    <button className='w-full py-2 px-3 flex justify-center border border-black'>Proceed to Checkout</button>
-                </>
-            )}
-        </div>
-    )
-}
-
 
 export default Navbar

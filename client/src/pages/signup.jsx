@@ -50,9 +50,7 @@ export default function Signup() {
         catch (err) {
             setStatus({ type: 'error', message: err.message || err.error || 'Something went wrong' })
         }
-        finally {
-            setLoading(false)
-        }
+        finally { setLoading(false) }
     }
 
     if (user.auth === 'authenticating')

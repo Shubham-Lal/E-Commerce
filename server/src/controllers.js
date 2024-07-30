@@ -1,4 +1,4 @@
-const supabase = require('./supabase')
+const supabase = require('./supabase.js')
 const User = require('./models/User.js')
 const Session = require('./models/Session.js')
 const Product = require('./models/Product.js')
@@ -242,7 +242,7 @@ module.exports.fetchCart = async (req, res) => {
     }
 }
 
-module.exports.checkoutOrder = async (req, res) => {
+module.exports.buySingleProduct = async (req, res) => {
     try {
         const product_id = req.query.product
         const token = req.query.token
@@ -292,11 +292,70 @@ module.exports.checkoutOrder = async (req, res) => {
     }
 }
 
-module.exports.createOrder = async (req, res) => {
+module.exports.buyMultipleProduct = async (req, res) => {
     try {
-        res.status(200)
-    }
-    catch (error) {
+        const user_id = req.user.id
+        const { cart } = req.body
+
+        const productIds = cart.map(item => item._id)
+        const products = await Product.find({ _id: { $in: productIds } })
+
+        const missingProducts = cart.filter(item => !products.some(p => p._id.toString() === item._id))
+        if (missingProducts.length > 0) {
+            const missingProductNames = missingProducts.map(item => item.name).join(', ')
+            return res.status(404).json({
+                success: false,
+                message: `The following products are not available: ${missingProductNames}`
+            })
+        }
+
+        const outOfStockProducts = []
+        for (let item of cart) {
+            const product = products.find(p => p._id.toString() === item._id)
+            if (item.quantity > product.stock) {
+                outOfStockProducts.push(product.name)
+            }
+        }
+
+        if (outOfStockProducts.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: `Insufficient stock for the following products: ${outOfStockProducts.join(', ')}`
+            })
+        }
+
+        const line_items = cart.map(item => {
+            const product = products.find(p => p._id.toString() === item._id)
+            return {
+                price_data: {
+                    currency: 'inr',
+                    product_data: {
+                        name: product.name,
+                        description: product.description
+                    },
+                    unit_amount: product.price * 100
+                },
+                quantity: item.quantity
+            }
+        })
+
+        const payment_intent_data = {
+            metadata: {
+                user: user_id,
+                products: JSON.stringify(cart.map(item => ({ _id: item._id, quantity: item.quantity })))
+            }
+        }
+
+        const session = await stripe.checkout.sessions.create({
+            line_items,
+            mode: 'payment',
+            success_url: `${process.env.SERVER_URL}/payment?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${process.env.CLIENT_URL}/error?message=Order failed`,
+            payment_intent_data
+        })
+
+        res.status(200).json({ success: true, payement_url: session.url })
+    } catch (error) {
         return res.status(500).json({ success: false, message: error.message })
     }
 }

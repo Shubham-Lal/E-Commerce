@@ -6,6 +6,9 @@ export const useProductStore = create((set) => ({
         items: []
     },
     setProducts: (products) => set({ products }),
-    cart: [],
-    setCart: (data) => set((state) => ({ ...state, cart: data }))
+    cart: {
+        status: '', // 'fetching', 'fetched', 'failed'
+        items: []
+    },
+    setCart: (cart) => set({ cart })
 }))

@@ -33,7 +33,7 @@ export default function Admin() {
             .then(res => res.json())
             .then(response => {
                 if (response.success) {
-                    setProducts(response.data)
+                    setProducts({ status: 'fetched', items: response.data })
                 }
             })
             .finally(() => setDeleteProduct(prev => ({ ...prev, [id]: false })))

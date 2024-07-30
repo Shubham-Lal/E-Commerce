@@ -12,15 +12,23 @@ const ProductCard = ({ data }) => {
         if (user.auth !== 'authenticating') {
             if (user.auth === 'failed') navigate('/login')
             else {
-                const existingProduct = cart.find(item => item._id === data._id)
+                const existingProduct = cart.items.find(item => item._id === data._id)
                 if (existingProduct) {
                     if (existingProduct.quantity < existingProduct.stock) {
-                        setCart(cart.map(item =>
-                            item._id === data._id ? { ...item, quantity: item.quantity + 1 } : item
-                        ))
+                        setCart({
+                            ...cart,
+                            status: 'fetched',
+                            items: cart.items.map(item =>
+                                item._id === data._id ? { ...item, quantity: item.quantity + 1 } : item
+                            )
+                        })
                     }
                 } else {
-                    setCart([...cart, { ...data, quantity: 1 }])
+                    setCart({
+                        ...cart,
+                        status: 'fetched',
+                        items: [...cart.items, { ...data, quantity: 1 }]
+                    })
                 }
             }
         }
@@ -34,7 +42,7 @@ const ProductCard = ({ data }) => {
         }
 
         window.location.href = `${import.meta.env.VITE_SERVER_URL}/order?product=${data._id}&token=${token}`
-    };
+    }
 
     return (
         <div className='mb-3 p-3 flex flex-col gap-3 break-inside-avoid border'>
