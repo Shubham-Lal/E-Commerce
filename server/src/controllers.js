@@ -3,6 +3,7 @@ const User = require('./models/User.js')
 const Session = require('./models/Session.js')
 const Product = require('./models/Product.js')
 const Order = require('./models/Order.js')
+const Cart = require('./models/Cart.js')
 const isNumber = require('is-number')
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 
@@ -48,7 +49,7 @@ module.exports.verifyUser = async (req, res) => {
         else if (!password) return res.status(400).json({ success: false, message: 'Password is required' })
 
         const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-        if (error) throw error.message
+        if (error) throw error
 
         const user = await User.findById(data.user.id)
         if (!user) {
@@ -89,7 +90,7 @@ module.exports.demoAdmin = async (req, res) => {
             email: process.env.ADMIN_EMAIL,
             password: process.env.ADMIN_PASSWORD
         })
-        if (error) throw error.message
+        if (error) throw error
 
         const user = await User.findById(data.user.id)
         if (!user) return res.status(400).json({ success: false, message: 'User not found' })
@@ -117,7 +118,7 @@ module.exports.demoUser = async (req, res) => {
             email: process.env.USER_EMAIL,
             password: process.env.USER_PASSWORD
         })
-        if (error) throw error.message
+        if (error) throw error
 
         const user = await User.findById(data.user.id)
         if (!user) return res.status(400).json({ success: false, message: 'User not found' })
@@ -226,18 +227,32 @@ module.exports.deleteProduct = async (req, res) => {
 
 module.exports.updateCart = async (req, res) => {
     try {
-        res.status(200)
-    }
-    catch (error) {
+        const { cart } = req.body
+
+        await Cart.findByIdAndUpdate(
+            req.user.id,
+            { products: cart },
+            { new: true, upsert: true }
+        )
+
+        res.status(200).json({ success: true })
+    } catch (error) {
         return res.status(500).json({ success: false, message: error.message })
     }
 }
 
 module.exports.fetchCart = async (req, res) => {
     try {
-        res.status(200)
-    }
-    catch (error) {
+        const cart = await Cart.findById(req.user.id).populate('products._id')
+        if (!cart) return res.status(404).json({ success: false, message: 'Failed to fetch cart' })
+
+        const products = cart.products.map(item => ({
+            ...item._id._doc,
+            quantity: item.quantity
+        }))
+
+        res.status(200).json({ success: true, data: products })
+    } catch (error) {
         return res.status(500).json({ success: false, message: error.message })
     }
 }
@@ -296,6 +311,24 @@ module.exports.checkoutProduct = async (req, res) => {
             }
         }
 
+        let userCart = await Cart.findById(user_id)
+        if (userCart) {
+            userCart.products = cart.map(item => ({
+                _id: item._id,
+                quantity: item.quantity
+            }))
+            await userCart.save()
+        } else {
+            userCart = new Cart({
+                _id: user_id,
+                products: cart.map(item => ({
+                    _id: item._id,
+                    quantity: item.quantity
+                }))
+            })
+            await userCart.save()
+        }
+
         const session = await stripe.checkout.sessions.create({
             line_items,
             mode: 'payment',
@@ -304,7 +337,7 @@ module.exports.checkoutProduct = async (req, res) => {
             payment_intent_data
         })
 
-        res.status(200).json({ success: true, payement_url: session.url })
+        res.status(200).json({ success: true, payment_url: session.url })
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message })
     }
@@ -320,7 +353,7 @@ module.exports.fetchOrders = async (req, res) => {
     }
 }
 
-module.exports.fetchSessions = async (req, res) => {
+module.exports.fetchSession = async (req, res) => {
     try {
         const loginData = { timestamp: req.user.last_sign_in_at }
         const ip = req.headers['ip']
@@ -384,6 +417,14 @@ module.exports.processPayment = async (req, res) => {
             products: productsMetadata,
             total_amount
         })
+
+        const cart = await Cart.findById(user_id)
+        if (cart) {
+            cart.products = cart.products.filter(cartItem =>
+                !productsMetadata.some(purchasedItem => purchasedItem._id === cartItem._id.toString())
+            )
+            await cart.save()
+        }
 
         res.redirect(`${process.env.CLIENT_URL}/orders`)
     } catch (error) {

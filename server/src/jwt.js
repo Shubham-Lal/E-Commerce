@@ -12,7 +12,7 @@ module.exports = async function verifyToken(req, res, next) {
 
     try {
         const { data, error } = await supabase.auth.getUser(token)
-        if (error) throw error.message
+        if (error) throw error
 
         const user = await User.findById(data.user.id)
         if (!user) {

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/useAuthStore'
 import { useProductStore } from '../store/useProductStore'
+import { handleUpdateCart } from '../utils/updateCart'
 import { LoadingSVG } from './loading'
 
 const ProductCard = ({ data }) => {
@@ -13,27 +14,34 @@ const ProductCard = ({ data }) => {
     const [loading, setLoading] = useState('')
     const [error, setError] = useState(false)
 
-    const handleAddToCart = () => {
+    const handleAddToCart = async () => {
         if (user.auth !== 'authenticating') {
             if (user.auth === 'failed') navigate('/login')
             else {
                 const existingProduct = cart.items.find(item => item._id === data._id)
+                let updatedCart
+
                 if (existingProduct) {
                     if (existingProduct.quantity < existingProduct.stock) {
-                        setCart({
+                        updatedCart = {
                             ...cart,
                             status: 'fetched',
                             items: cart.items.map(item =>
                                 item._id === data._id ? { ...item, quantity: item.quantity + 1 } : item
                             )
-                        })
+                        }
                     }
                 } else {
-                    setCart({
+                    updatedCart = {
                         ...cart,
                         status: 'fetched',
                         items: [...cart.items, { ...data, quantity: 1 }]
-                    })
+                    }
+                }
+
+                if (updatedCart) {
+                    setCart(updatedCart)
+                    await handleUpdateCart(updatedCart, setUser)
                 }
             }
         }
@@ -60,7 +68,7 @@ const ProductCard = ({ data }) => {
                     .then(res => res.json())
                     .then(response => {
                         if (response.success) {
-                            window.location.href = response.payement_url
+                            window.location.href = response.payment_url
                         }
                         else setError(response.message)
                     })
@@ -87,7 +95,7 @@ const ProductCard = ({ data }) => {
                     {loading === data._id ? <LoadingSVG size={24} color='#000' /> : 'Buy'}
                 </button>
             </div>
-            <p className='text-center text-red-600'>{error}</p>
+            {error && <p className='text-center text-red-600'>{error}</p>}
         </div>
     )
 }
