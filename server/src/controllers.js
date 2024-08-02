@@ -289,6 +289,24 @@ module.exports.checkoutProduct = async (req, res) => {
             })
         }
 
+        let userCart = await Cart.findById(user_id)
+        if (userCart) {
+            userCart.products = cart.map(item => ({
+                _id: item._id,
+                quantity: item.quantity
+            }))
+            await userCart.save()
+        } else {
+            userCart = new Cart({
+                _id: user_id,
+                products: cart.map(item => ({
+                    _id: item._id,
+                    quantity: item.quantity
+                }))
+            })
+            await userCart.save()
+        }
+
         const line_items = cart.map(item => {
             const product = products.find(p => p._id.toString() === item._id)
             return {
@@ -309,24 +327,6 @@ module.exports.checkoutProduct = async (req, res) => {
                 user: user_id,
                 products: JSON.stringify(cart.map(item => ({ _id: item._id, quantity: item.quantity })))
             }
-        }
-
-        let userCart = await Cart.findById(user_id)
-        if (userCart) {
-            userCart.products = cart.map(item => ({
-                _id: item._id,
-                quantity: item.quantity
-            }))
-            await userCart.save()
-        } else {
-            userCart = new Cart({
-                _id: user_id,
-                products: cart.map(item => ({
-                    _id: item._id,
-                    quantity: item.quantity
-                }))
-            })
-            await userCart.save()
         }
 
         const session = await stripe.checkout.sessions.create({
@@ -412,12 +412,6 @@ module.exports.processPayment = async (req, res) => {
             total_amount += product.price * productMeta.quantity
         }
 
-        await Order.create({
-            user_id,
-            products: productsMetadata,
-            total_amount
-        })
-
         const cart = await Cart.findById(user_id)
         if (cart) {
             cart.products = cart.products.filter(cartItem =>
@@ -425,6 +419,12 @@ module.exports.processPayment = async (req, res) => {
             )
             await cart.save()
         }
+
+        await Order.create({
+            user_id,
+            products: productsMetadata,
+            total_amount
+        })
 
         res.redirect(`${process.env.CLIENT_URL}/orders`)
     } catch (error) {
