@@ -9,6 +9,10 @@ router.post('/register', controller.createUser)
 
 router.post('/login', controller.verifyUser)
 
+router.post('/forgot-password', controller.recoverAccount)
+
+router.post('/update-password', controller.resetPassword)
+
 router.get('/demo/admin', controller.demoAdmin)
 
 router.get('/demo/user', controller.demoUser)

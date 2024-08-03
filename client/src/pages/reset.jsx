@@ -1,13 +1,17 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/useAuthStore'
 import { LoadingSVG } from '../components/loading'
 
-export default function ForgotPassword() {
+export default function ResetPassword() {
+    const navigate = useNavigate()
+
     const { user } = useAuthStore()
 
     const [loading, setLoading] = useState(false)
-    const [email, setEmail] = useState('')
+    const [password, setPassword] = useState('')
+    const [accessToken, setAccessToken] = useState('')
+    const [refreshToken, setRefreshToken] = useState('')
     const [status, setStatus] = useState({
         type: '',
         message: ''
@@ -19,22 +23,34 @@ export default function ForgotPassword() {
         setStatus({ type: '', message: '' })
         setLoading(true)
 
-        await fetch(`${import.meta.env.VITE_SERVER_URL}/forgot-password`, {
+        await fetch(`${import.meta.env.VITE_SERVER_URL}/update-password`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email })
+            headers: {
+                'access_token': accessToken,
+                'refresh_token': refreshToken,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ password })
         })
             .then(res => res.json())
             .then(response => {
                 if (response.success) {
                     setStatus({ type: 'success', message: response.message })
+                    setTimeout(() => navigate('/login'), 2000)
                 } else {
                     setStatus({ type: 'error', message: response.message })
                 }
             })
             .catch(err => setStatus({ type: 'error', message: err.message || err.error || 'Something went wrong' }))
-            .finally(() => setLoading(''))
+            .finally(() => setLoading(false))
     }
+
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.hash.substring(1))
+        if (!params.get('access_token') || !params.get('refresh_token')) navigate('/')
+        setAccessToken(params.get('access_token'))
+        setRefreshToken(params.get('refresh_token'))
+    }, [])
 
     if (user.auth === 'authenticating')
         return <div className='w-full flex justify-center'><LoadingSVG size={24} color='#000' /></div>
@@ -45,13 +61,13 @@ export default function ForgotPassword() {
 
                 <input
                     className='w-full mt-1 py-2 px-3 outline-none border-2 focus:border-black'
-                    placeholder='Enter email address'
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
+                    placeholder='Enter new password'
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
                 />
 
-                <button className={`w-full py-2 px-3 flex justify-center ${loading ? 'bg-gray-300 cursor-not-allowed' : 'bg-black'} text-white`}>
-                    {loading ? <LoadingSVG size={24} color='#000' /> : 'Send Verification'}
+                <button className={`w-full py-2 px-3 flex justify-center ${loading ? 'bg-gray-300 cursor-not-allowed' : 'bg-black'} text-white`} disabled={loading}>
+                    {loading ? <LoadingSVG size={24} color='#000' /> : 'Reset Password'}
                 </button>
 
                 <Link to='/login' className='hover:underline'>Go Back</Link>

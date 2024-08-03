@@ -84,6 +84,49 @@ module.exports.verifyUser = async (req, res) => {
     }
 }
 
+module.exports.recoverAccount = async (req, res) => {
+    try {
+        const { email } = req.body
+
+        if (!email) return res.status(400).json({ success: false, message: 'Email is required' })
+
+        const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${process.env.CLIENT_URL}/reset-password` })
+        if (error) throw error
+
+        res.status(200).json({
+            success: true,
+            message: 'Password reset link sent to your email'
+        })
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message })
+    }
+}
+
+module.exports.resetPassword = async (req, res) => {
+    try {
+        const access_token = req.headers.access_token
+        const refresh_token = req.headers.refresh_token
+        const { password } = req.body
+
+        if (!access_token) return res.status(400).json({ success: false, message: 'Unauthorized' })
+        if (!refresh_token) return res.status(400).json({ success: false, message: 'Unauthorized' })
+        if (!password) return res.status(400).json({ success: false, message: 'Password is required' })
+
+        const { error: session_error } = await supabase.auth.setSession({ access_token, refresh_token })
+        if (session_error) throw session_error
+
+        const { error: update_error } = await supabase.auth.updateUser({ password })
+        if (update_error) throw update_error
+
+        res.status(200).json({
+            success: true,
+            message: 'Password reset successfull'
+        })
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message })
+    }
+}
+
 module.exports.demoAdmin = async (req, res) => {
     try {
         const { data, error } = await supabase.auth.signInWithPassword({

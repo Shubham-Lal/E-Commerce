@@ -87,6 +87,7 @@ export default function Login() {
             setError(err.message || err.error || 'Something went wrong')
             setDemo({ type, status: false })
         }
+        finally { setDemo({ type: '', status: false }) }
     }
 
     return (

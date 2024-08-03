@@ -12,6 +12,7 @@ import Admin from './pages/admin'
 import Login from './pages/login'
 import Signup from './pages/signup'
 import ForgotPassword from './pages/forgot'
+import ResetPassword from './pages/reset'
 import Error from './pages/error'
 
 export default function App() {
@@ -39,6 +40,7 @@ export default function App() {
           <Route path='/login' element={user.auth !== 'authenticated' ? <Login /> : user.role === 'admin' ? <Navigate to='/admin' /> : <Navigate to='/' />} />
           <Route path='/signup' element={user.auth !== 'authenticated' ? <Signup /> : <Navigate to='/' />} />
           <Route path='/forgot-password' element={user.auth !== 'authenticated' ? <ForgotPassword /> : <Navigate to='/' />} />
+          <Route path='/reset-password' element={user.auth !== 'authenticated' ? <ResetPassword /> : <Navigate to='/' />} />
           <Route path='/error' element={<Error />} />
         </Routes>
       </main>
